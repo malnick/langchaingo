@@ -119,7 +119,6 @@ func (s SQLDatabaseChain) Call(ctx context.Context, inputs map[string]any, optio
 	if err != nil {
 		return nil, err
 	}
-
 	// Generate answer
 	llmInputs["input"] = query + queryPrefixWith + sqlQuery + stopWord + queryResult
 	out, err = Predict(ctx, s.LLMChain, llmInputs, options...)

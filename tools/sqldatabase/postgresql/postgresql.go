@@ -3,6 +3,7 @@ package postgresql
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	_ "github.com/jackc/pgx/v5/stdlib" // postgresql driver
 	"github.com/tmc/langchaingo/tools/sqldatabase"
@@ -63,7 +64,7 @@ func (p PostgreSQL) Query(ctx context.Context, query string, args ...any) ([]str
 	}
 	results := make([][]string, 0)
 	for rows.Next() {
-		row := make([]string, len(cols))
+		row := make([]sql.NullString, len(cols))
 		rowPtrs := make([]interface{}, len(cols))
 		for i := range row {
 			rowPtrs[i] = &row[i]
@@ -72,7 +73,13 @@ func (p PostgreSQL) Query(ctx context.Context, query string, args ...any) ([]str
 		if err != nil {
 			return nil, nil, err
 		}
-		results = append(results, row)
+
+		strRow := make([]string, len(cols))
+		for i := range row {
+			strRow[i] = row[i].String
+		}
+
+		results = append(results, strRow)
 	}
 	return cols, results, nil
 }
@@ -109,7 +116,7 @@ func (p PostgreSQL) TableInfo(ctx context.Context, table string) (string, error)
 		return "", err
 	}
 	if len(result) == 0 {
-		return "", sqldatabase.ErrTableNotFound
+		return "", fmt.Errorf("%s: %s", sqldatabase.ErrTableNotFound, table)
 	}
 	if len(result[0]) < 2 { //nolint:gomnd
 		return "", sqldatabase.ErrInvalidResult
